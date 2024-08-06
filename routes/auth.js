@@ -10,28 +10,28 @@ router.post('/register', async (req, res) => {
     try {
         const { username, firstName, lastName, email, password } = req.body;
 
-        // Validation (you may want to add more robust validation)
+      // Validation
         if (!username || !firstName || !lastName || !email || !password) {
-        return res.status(400).json({ message: 'All fields are required' });
+            return res.status(400).json({ message: 'All fields are required' });
         }
 
         if (password.length < 6) {
-        return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
         }
 
-        // Check if user already exists
+      // Check if user already exists
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
-        return res.status(400).json({ message: 'User with this email already exists' });
+            return res.status(400).json({ message: 'User with this email already exists' });
         }
 
         const userId = await User.create(username, firstName, lastName, email, password);
 
         res.status(201).json({ message: 'User registered successfully', userId });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'An error occurred during registration' });
-    }
+        } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ message: 'An error occurred during registration', error: error.message });
+        }
 });
 
 router.post('/login', async (req, res) => {
@@ -78,6 +78,10 @@ router.post('/logout', (req, res) => {
 router.get('/protected-route', authenticateToken, (req, res) => {
     // This route is now protected
     res.json({ message: 'This is a protected route', userId: req.user.userId });
+    });
+
+router.get('/protected', authenticateToken, (req, res) => {
+    res.json({ message: 'You accessed a protected route', user: req.user });
     });
 
 module.exports = router;
