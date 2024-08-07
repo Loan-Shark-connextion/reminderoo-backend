@@ -26,11 +26,12 @@ router.post('/register', async (req, res) => {
         }
 
         const userId = await User.create(username, firstName, lastName, email, password);
-
+        console.log('Sending response:', { message: 'User registered successfully', userId });
         res.status(201).json({ message: 'User registered successfully', userId });
         } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ message: 'An error occurred during registration', error: error.message });
+            console.error('Registration error:', error);
+            console.error('Stack trace:', error.stack);
+            res.status(500).json({ message: 'An error occurred during registration', error: error.message, stack: error.stack });
         }
 });
 
