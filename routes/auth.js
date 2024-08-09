@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
     try {
-        const { username, firstName, lastName, email, password } = req.body;
+        const { username, name, email, password } = req.body;
 
       // Validation
-        if (!username || !firstName || !lastName || !email || !password) {
+        if (!username || !name || !email || !password) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User with this email already exists' });
         }
 
-        const userId = await User.create(username, firstName, lastName, email, password);
+        const userId = await User.create(username, name, email, password);
         console.log('Sending response:', { message: 'User registered successfully', userId });
         res.status(201).json({ message: 'User registered successfully', userId });
         } catch (error) {
