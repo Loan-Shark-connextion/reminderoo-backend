@@ -65,6 +65,28 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+router.get('/:id/transactions', authenticateToken, async (req, res) => {
+    try {
+        const subscriptionId = req.params.id;
+        const userId = req.user.userId;
+
+        // First, verify that the subscription belongs to the authenticated user
+        const [subscription] = await pool.query('SELECT * FROM subscriptions WHERE id = ? AND user_id = ?', [subscriptionId, userId]);
+
+        if (subscription.length === 0) {
+            return res.status(404).json({ message: 'Subscription not found or does not belong to the user' });
+        }
+
+        // Fetch all transactions for the subscription
+        const [transactions] = await pool.query('SELECT * FROM transactions WHERE subscription_id = ?', [subscriptionId]);
+
+        res.json(transactions);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'An error occurred while fetching transaction data' });
+    }
+});
+
 // Update a transaction
 router.put('/:id', authenticateToken, async (req, res) => {
     try {

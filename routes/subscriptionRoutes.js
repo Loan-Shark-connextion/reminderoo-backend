@@ -119,22 +119,22 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 function calculateNextPayment(startDate, cycle) {
     let nextPayment = new Date(startDate);
     switch (cycle) {
-        case 'Daily':
+        case 'daily':
             nextPayment.setDate(nextPayment.getDate() + 1);
             break;
-        case 'Weekly':
+        case 'weekly':
             nextPayment.setDate(nextPayment.getDate() + 7);
             break;
-        case 'Monthly':
+        case 'monthly':
             nextPayment.setMonth(nextPayment.getMonth() + 1);
             break;
-        case '3 Months':
+        case '3 months':
             nextPayment.setMonth(nextPayment.getMonth() + 3);
             break;
-        case '6 Months':
+        case '6 months':
             nextPayment.setMonth(nextPayment.getMonth() + 6);
             break;
-        case 'Yearly':
+        case 'yearly':
             nextPayment.setFullYear(nextPayment.getFullYear() + 1);
             break;
     }
