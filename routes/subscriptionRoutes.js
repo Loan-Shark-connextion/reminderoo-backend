@@ -14,11 +14,12 @@ router.post('/', authenticateToken, async (req, res) => {
             cycle, 
             paymentMethod, 
             intervalDays,
-            email 
+            email,
+            icon 
         } = req.body;
 
         // Validate input
-        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email) {
+        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
@@ -26,8 +27,8 @@ router.post('/', authenticateToken, async (req, res) => {
         const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
 
         const [result] = await pool.query(
-            'INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [req.user.userId, appName, category, pricing, startPayment, nextPayment, 'Active', cycle, paymentMethod, intervalDays, email]
+            'INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [req.user.userId, appName, category, pricing, startPayment, nextPayment, 'active', cycle, paymentMethod, intervalDays, email]
         );
 
         res.status(201).json({ message: 'Subscription created successfully', subscriptionId: result.insertId });
@@ -73,19 +74,20 @@ router.put('/:id', authenticateToken, async (req, res) => {
             cycle, 
             paymentMethod, 
             intervalDays,
-            email 
+            email,
+            icon 
         } = req.body;
 
         // Validate input
-        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email) {
+        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
         const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
 
         const [result] = await pool.query(
-            'UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ? WHERE id = ? AND user_id = ?',
-            [appName, category, pricing, startPayment, nextPayment, cycle, paymentMethod, intervalDays, req.params.id, req.user.userId]
+            'UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?',
+            [appName, category, pricing, startPayment, nextPayment, cycle, paymentMethod, intervalDays, email, icon, req.params.id, req.user.userId]
         );
 
         if (result.affectedRows === 0) {
