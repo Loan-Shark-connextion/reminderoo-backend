@@ -11,17 +11,20 @@ router.post('/', authenticateToken, async (req, res) => {
             pricing, 
             status, 
             paymentMethod, 
-            paymentDate 
+            paymentDate,
+            appName,
+            icon,
+            category
         } = req.body;
 
         // Validate input
-        if (!subscriptionId || !pricing || !status || !paymentMethod || !paymentDate) {
+        if (!subscriptionId || !pricing || !status || !paymentMethod || !paymentDate || !appName || !icon || !category) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
         const [result] = await pool.query(
-            'INSERT INTO transactions (subscription_id, pricing, status, payment_method, payment_date) VALUES (?, ?, ?, ?, ?)',
-            [subscriptionId, pricing, status, paymentMethod, paymentDate]
+            'INSERT INTO transactions (subscription_id, pricing, status, payment_method, payment_date, appName, icon, category) VALUES (?, ?, ?, ?, ?)',
+            [subscriptionId, pricing, status, paymentMethod, paymentDate, appName, icon, category]
         );
 
         res.status(201).json({ message: 'Transaction created successfully', transactionId: result.insertId });
@@ -69,16 +72,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
             pricing, 
             status, 
             paymentMethod, 
-            paymentDate 
+            paymentDate,
+            appName,
+            icon,
+            category 
         } = req.body;
 
         // Validate input
-        if (!pricing || !status || !paymentMethod || !paymentDate) {
+        if (!pricing || !status || !paymentMethod || !paymentDate || !appName || !icon || !category) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
         const [result] = await pool.query(
-            'UPDATE transactions t JOIN subscriptions s ON t.subscription_id = s.id SET t.pricing = ?, t.status = ?, t.payment_method = ?, t.payment_date = ? WHERE t.id = ? AND s.user_id = ?',
+            'UPDATE transactions t JOIN subscriptions s ON t.subscription_id = s.id SET t.pricing = ?, t.status = ?, t.payment_method = ?, t.payment_date = ? t.appName = ?, t.icon = ?, t.category = ? WHERE t.id = ? AND s.user_id = ?',
             [pricing, status, paymentMethod, paymentDate, req.params.id, req.user.userId]
         );
 

@@ -28,7 +28,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
         const [result] = await pool.query(
             'INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [req.user.userId, appName, category, pricing, startPayment, nextPayment, 'active', cycle, paymentMethod, intervalDays, email]
+            [req.user.userId, appName, category, pricing, startPayment, nextPayment, 'active', cycle, paymentMethod, intervalDays, email, icon]
         );
 
         res.status(201).json({ message: 'Subscription created successfully', subscriptionId: result.insertId });
