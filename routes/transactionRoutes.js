@@ -23,7 +23,7 @@ router.post('/', authenticateToken, async (req, res) => {
         }
 
         const [result] = await pool.query(
-            'INSERT INTO transactions (subscription_id, pricing, status, payment_method, payment_date, appName, icon, category) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO transactions (subscription_id, pricing, status, payment_method, payment_date, appName, icon, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [subscriptionId, pricing, status, paymentMethod, paymentDate, appName, icon, category]
         );
 
