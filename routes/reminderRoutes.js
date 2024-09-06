@@ -12,3 +12,5 @@ router.post('/trigger-reminders', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Error triggering reminder check', error: error.message });
     }
 });
+
+module.exports = router;

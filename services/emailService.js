@@ -1,5 +1,3 @@
-emailService.js
-
 const sgMail = require('@sendgrid/mail');
 const fs = require('fs').promises;
 const path = require('path');
