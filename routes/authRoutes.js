@@ -29,7 +29,7 @@ router.post("/register", async (req, res) => {
         .json({ message: "User with this email already exists" });
     }
 
-    const userId = await User.create("username", name, email, password);
+    const userId = await User.create(name, email, password);
     console.log("Sending response:", {
       message: "User registered successfully",
       userId,
@@ -38,11 +38,13 @@ router.post("/register", async (req, res) => {
   } catch (error) {
     console.error("Registration error:", error);
     console.error("Stack trace:", error.stack);
-    res.status(500).json({
-      message: "An error occurred during registration",
-      error: error.message,
-      stack: error.stack,
-    });
+    res
+      .status(500)
+      .json({
+        message: "An error occurred during registration",
+        error: error.message,
+        stack: error.stack,
+      });
   }
 });
 
@@ -81,7 +83,7 @@ router.post("/login", async (req, res) => {
 
     res.json({
       message: "Login successful",
-      user: { id: user.id, email: user.email, username: user.username },
+      user: { id: user.id, email: user.email },
       accessToken: token,
     });
   } catch (error) {

@@ -5,6 +5,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcrypt");
+const { sendEmail } = require("../services/emailService");
 
 const storage = multer.diskStorage({});
 
@@ -104,6 +105,23 @@ router.put("/update-profile", authenticateToken, async (req, res) => {
       res
         .status(500)
         .json({ message: "Error changing password", error: error.message });
+    }
+  });
+
+  router.post("/test-email", async (req, res) => {
+    try {
+      await sendEmail(
+        "recipient@example.com", // replace with your email
+        "Test Email",
+        "This is a test email from Reminderoo",
+        "<h1>Test Email</h1><p>This is a test email from Reminderoo</p>"
+      );
+      res.json({ message: "Test email sent successfully" });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res
+        .status(500)
+        .json({ message: "Error sending test email", error: error.message });
     }
   });
 });

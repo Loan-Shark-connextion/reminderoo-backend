@@ -13,10 +13,9 @@ router.post("/", authenticateToken, async (req, res) => {
       startPayment,
       cycle,
       paymentMethod,
-      intervalDays,
-      icon,
+      intervalDays, // New field for reminder preference
       email,
-      status,
+      icon,
     } = req.body;
 
     // Validate input
@@ -27,7 +26,8 @@ router.post("/", authenticateToken, async (req, res) => {
       !startPayment ||
       !cycle ||
       !paymentMethod ||
-      !intervalDays
+      !intervalDays ||
+      !email
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -44,7 +44,7 @@ router.post("/", authenticateToken, async (req, res) => {
         pricing,
         startPayment,
         nextPayment,
-        status,
+        "active",
         cycle,
         paymentMethod,
         intervalDays,
@@ -53,10 +53,12 @@ router.post("/", authenticateToken, async (req, res) => {
       ]
     );
 
-    res.status(201).json({
-      message: "Subscription created successfully",
-      subscriptionId: result.insertId,
-    });
+    res
+      .status(201)
+      .json({
+        message: "Subscription created successfully",
+        subscriptionId: result.insertId,
+      });
   } catch (error) {
     console.error(error);
     res
@@ -111,8 +113,8 @@ router.put("/:id", authenticateToken, async (req, res) => {
       cycle,
       paymentMethod,
       intervalDays,
-      icon,
       email,
+      icon,
     } = req.body;
 
     // Validate input
@@ -123,7 +125,9 @@ router.put("/:id", authenticateToken, async (req, res) => {
       !startPayment ||
       !cycle ||
       !paymentMethod ||
-      !intervalDays
+      !intervalDays ||
+      !email ||
+      !icon
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -131,7 +135,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
     const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
 
     const [result] = await pool.query(
-      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, icon = ?, email = ? WHERE id = ? AND user_id = ?",
+      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?",
       [
         appName,
         category,
@@ -141,8 +145,8 @@ router.put("/:id", authenticateToken, async (req, res) => {
         cycle,
         paymentMethod,
         intervalDays,
-        icon,
         email,
+        icon,
         req.params.id,
         req.user.userId,
       ]
@@ -184,22 +188,22 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 function calculateNextPayment(startDate, cycle) {
   let nextPayment = new Date(startDate);
   switch (cycle) {
-    case "Daily":
+    case "daily":
       nextPayment.setDate(nextPayment.getDate() + 1);
       break;
-    case "Weekly":
+    case "weekly":
       nextPayment.setDate(nextPayment.getDate() + 7);
       break;
-    case "Monthly":
+    case "monthly":
       nextPayment.setMonth(nextPayment.getMonth() + 1);
       break;
-    case "3 Months":
+    case "3 months":
       nextPayment.setMonth(nextPayment.getMonth() + 3);
       break;
-    case "6 Months":
+    case "6 months":
       nextPayment.setMonth(nextPayment.getMonth() + 6);
       break;
-    case "Yearly":
+    case "yearly":
       nextPayment.setFullYear(nextPayment.getFullYear() + 1);
       break;
   }
