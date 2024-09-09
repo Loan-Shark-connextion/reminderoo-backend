@@ -11,11 +11,13 @@ router.post("/", authenticateToken, async (req, res) => {
       category,
       pricing,
       startPayment,
+      nextPayment,
       cycle,
       paymentMethod,
       intervalDays, // New field for reminder preference
       email,
       icon,
+      status,
     } = req.body;
 
     // Validate input
@@ -33,7 +35,7 @@ router.post("/", authenticateToken, async (req, res) => {
     }
 
     // Calculate next payment date based on cycle
-    const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
+    // const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
 
     const [result] = await pool.query(
       "INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -44,7 +46,7 @@ router.post("/", authenticateToken, async (req, res) => {
         pricing,
         startPayment,
         nextPayment,
-        "active",
+        status,
         cycle,
         paymentMethod,
         intervalDays,
@@ -53,12 +55,10 @@ router.post("/", authenticateToken, async (req, res) => {
       ]
     );
 
-    res
-      .status(201)
-      .json({
-        message: "Subscription created successfully",
-        subscriptionId: result.insertId,
-      });
+    res.status(201).json({
+      message: "Subscription created successfully",
+      subscriptionId: result.insertId,
+    });
   } catch (error) {
     console.error(error);
     res
@@ -110,7 +110,9 @@ router.put("/:id", authenticateToken, async (req, res) => {
       category,
       pricing,
       startPayment,
+      nextPayment,
       cycle,
+      status,
       paymentMethod,
       intervalDays,
       email,
@@ -132,10 +134,11 @@ router.put("/:id", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
+    // const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
+    // const newStatus = getStatus(status);
 
     const [result] = await pool.query(
-      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?",
+      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ?, status = ? WHERE id = ? AND user_id = ?",
       [
         appName,
         category,
@@ -147,6 +150,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
         intervalDays,
         email,
         icon,
+        status,
         req.params.id,
         req.user.userId,
       ]
@@ -209,5 +213,20 @@ function calculateNextPayment(startDate, cycle) {
   }
   return nextPayment;
 }
+
+// function getStatus(status) {
+//   const differenceInDays = Math.floor(
+//     startDate - new Date() / (1000 * 60 * 60 * 24)
+//   );
+//   const newStatus =
+//     status === "inactive"
+//       ? "inactive"
+//       : differenceInDays < 0
+//       ? "overdue"
+//       : differenceInDays < 7
+//       ? "upcoming"
+//       : "active";
+//   return newStatus;
+// }
 
 module.exports = router;
