@@ -11,24 +11,23 @@ router.post('/', authenticateToken, async (req, res) => {
             category, 
             pricing, 
             startPayment, 
+            nextPayment,  // New field
+            status,       // New field
             cycle, 
             paymentMethod, 
-            intervalDays,  // New field for reminder preference
+            intervalDays,
             email,
             icon 
         } = req.body;
 
         // Validate input
-        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email) {
+        if (!appName || !category || !pricing || !startPayment || !nextPayment || !status || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
-        // Calculate next payment date based on cycle
-        const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
-
         const [result] = await pool.query(
             'INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [req.user.userId, appName, category, pricing, startPayment, nextPayment, 'active', cycle, paymentMethod, intervalDays, email, icon]
+            [req.user.userId, appName, category, pricing, startPayment, nextPayment, status, cycle, paymentMethod, intervalDays, email, icon]
         );
 
         res.status(201).json({ message: 'Subscription created successfully', subscriptionId: result.insertId });
@@ -71,6 +70,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             category, 
             pricing, 
             startPayment, 
+            nextPayment,  // New field
+            status,       // New field
             cycle, 
             paymentMethod, 
             intervalDays,
@@ -79,15 +80,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
         } = req.body;
 
         // Validate input
-        if (!appName || !category || !pricing || !startPayment || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
+        if (!appName || !category || !pricing || !startPayment || !nextPayment || !status || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
-        const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
-
         const [result] = await pool.query(
-            'UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?',
-            [appName, category, pricing, startPayment, nextPayment, cycle, paymentMethod, intervalDays, email, icon, req.params.id, req.user.userId]
+            'UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, status = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?',
+            [appName, category, pricing, startPayment, nextPayment, status, cycle, paymentMethod, intervalDays, email, icon, req.params.id, req.user.userId]
         );
 
         if (result.affectedRows === 0) {
@@ -114,31 +113,5 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'An error occurred while deleting the subscription' });
     }
 });
-
-// Helper function to calculate next payment date
-function calculateNextPayment(startDate, cycle) {
-    let nextPayment = new Date(startDate);
-    switch (cycle) {
-        case 'daily':
-            nextPayment.setDate(nextPayment.getDate() + 1);
-            break;
-        case 'weekly':
-            nextPayment.setDate(nextPayment.getDate() + 7);
-            break;
-        case 'monthly':
-            nextPayment.setMonth(nextPayment.getMonth() + 1);
-            break;
-        case '3 months':
-            nextPayment.setMonth(nextPayment.getMonth() + 3);
-            break;
-        case '6 months':
-            nextPayment.setMonth(nextPayment.getMonth() + 6);
-            break;
-        case 'yearly':
-            nextPayment.setFullYear(nextPayment.getFullYear() + 1);
-            break;
-    }
-    return nextPayment;
-}
 
 module.exports = router;
