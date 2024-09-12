@@ -40,7 +40,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Get all subscriptions for a user
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE user_id = ?', [req.user.userId]);
+        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE user_id = ? AND is_deleted = FALSE', [req.user.userId]);
         res.json(rows);
     } catch (error) {
         console.error(error);
@@ -51,7 +51,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Get a specific subscription
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE id = ? AND user_id = ? AND is_deleted = FALSE', [req.params.id, req.user.userId]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Subscription not found' });
         }
@@ -103,7 +103,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // Delete a subscription
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
-        const [result] = await pool.query('DELETE FROM subscriptions WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        const [result] = await pool.query(
+            'UPDATE subscriptions SET is_deleted = TRUE WHERE id = ? AND user_id = ?', 
+            [req.params.id, req.user.userId]
+        );
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Subscription not found' });
         }
