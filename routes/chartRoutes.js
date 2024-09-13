@@ -37,13 +37,13 @@ router.get('/spending', authenticateToken, async (req, res) => {
 
         rows.forEach(row => {
             const monthIndex = row.month - 1;
-            chartData[monthIndex][row.year] = row.total;
+            chartData[monthIndex][row.year] = parseInt(row.total);
         });
 
         // Calculate totals
         const totals = [
-            { year: lastYear, total: rows.filter(r => r.year === lastYear).reduce((sum, r) => sum + r.total, 0) },
-            { year: currentYear, total: rows.filter(r => r.year === currentYear).reduce((sum, r) => sum + r.total, 0) }
+            { year: lastYear, total: parseInt(rows.filter(r => r.year === lastYear).reduce((sum, r) => sum + parseInt(r.total), 0)) },
+            { year: currentYear, total: parseInt(rows.filter(r => r.year === currentYear).reduce((sum, r) => sum + parseInt(r.total), 0)) }
         ];
 
         res.json({ chartData, totals });
@@ -57,7 +57,7 @@ router.get('/cost', authenticateToken, async (req, res) => {
     try {
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+        const currentMonth = currentDate.getMonth() + 1;
 
         // Query to get top 5 apps by total cost for the current year and current month
         const [rows] = await pool.query(`
@@ -88,20 +88,17 @@ router.get('/cost', authenticateToken, async (req, res) => {
                 s.app_name
             ORDER BY 
                 sortedBy DESC, total_cost DESC
-            LIMIT 10
         `, [req.user.userId, currentYear, req.user.userId, currentYear, currentMonth]);
 
-        // Calculate total subscriptions for year and month
+        // Calculate total active subscriptions for year and month based on next_payment
         const [totalSubscriptions] = await pool.query(`
             SELECT 
-                COUNT(DISTINCT CASE WHEN YEAR(payment_date) = ? THEN subscription_id END) AS year_count,
-                COUNT(DISTINCT CASE WHEN YEAR(payment_date) = ? AND MONTH(payment_date) = ? THEN subscription_id END) AS month_count
+                COUNT(DISTINCT CASE WHEN YEAR(next_payment) = ? THEN id END) AS year_count,
+                COUNT(DISTINCT CASE WHEN YEAR(next_payment) = ? AND MONTH(next_payment) = ? THEN id END) AS month_count
             FROM 
-                transactions
-            JOIN 
-                subscriptions ON transactions.subscription_id = subscriptions.id
+                subscriptions
             WHERE 
-                subscriptions.user_id = ?
+                user_id = ? AND is_deleted = FALSE
         `, [currentYear, currentYear, currentMonth, req.user.userId]);
 
         const yearData = rows.filter(row => row.sortedBy === 'year').slice(0, 5);
@@ -109,19 +106,19 @@ router.get('/cost', authenticateToken, async (req, res) => {
 
         const response = {
             totals: [
-                { sortedBy: "year", count: totalSubscriptions[0].year_count },
-                { sortedBy: "month", count: totalSubscriptions[0].month_count }
+                { sortedBy: "year", count: parseInt(totalSubscriptions[0].year_count) },
+                { sortedBy: "month", count: parseInt(totalSubscriptions[0].month_count) }
             ],
             topApps: [
                 ...yearData.map(row => ({
                     sortedBy: "year",
                     appName: row.app_name,
-                    cost: row.total_cost
+                    cost: parseInt(row.total_cost)
                 })),
                 ...monthData.map(row => ({
                     sortedBy: "month",
                     appName: row.app_name,
-                    cost: row.total_cost
+                    cost: parseInt(row.total_cost)
                 }))
             ]
         };
