@@ -11,13 +11,13 @@ router.post("/", authenticateToken, async (req, res) => {
       category,
       pricing,
       startPayment,
-      nextPayment,
+      nextPayment, // New field
+      status, // New field
       cycle,
       paymentMethod,
-      intervalDays, // New field for reminder preference
+      intervalDays,
       email,
       icon,
-      status,
     } = req.body;
 
     // Validate input
@@ -26,16 +26,16 @@ router.post("/", authenticateToken, async (req, res) => {
       !category ||
       !pricing ||
       !startPayment ||
+      !nextPayment ||
+      !status ||
       !cycle ||
       !paymentMethod ||
       !intervalDays ||
-      !email
+      !email ||
+      !icon
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
-    // Calculate next payment date based on cycle
-    // const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
 
     const [result] = await pool.query(
       "INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -71,7 +71,7 @@ router.post("/", authenticateToken, async (req, res) => {
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM subscriptions WHERE user_id = ?",
+      "SELECT * FROM subscriptions WHERE user_id = ? AND is_deleted = FALSE",
       [req.user.userId]
     );
     res.json(rows);
@@ -87,7 +87,7 @@ router.get("/", authenticateToken, async (req, res) => {
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT * FROM subscriptions WHERE id = ? AND user_id = ?",
+      "SELECT * FROM subscriptions WHERE id = ? AND user_id = ? AND is_deleted = FALSE",
       [req.params.id, req.user.userId]
     );
     if (rows.length === 0) {
@@ -110,9 +110,9 @@ router.put("/:id", authenticateToken, async (req, res) => {
       category,
       pricing,
       startPayment,
-      nextPayment,
+      nextPayment, // New field
+      status, // New field
       cycle,
-      status,
       paymentMethod,
       intervalDays,
       email,
@@ -125,6 +125,8 @@ router.put("/:id", authenticateToken, async (req, res) => {
       !category ||
       !pricing ||
       !startPayment ||
+      !nextPayment ||
+      !status ||
       !cycle ||
       !paymentMethod ||
       !intervalDays ||
@@ -134,23 +136,20 @@ router.put("/:id", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // const nextPayment = calculateNextPayment(new Date(startPayment), cycle);
-    // const newStatus = getStatus(status);
-
     const [result] = await pool.query(
-      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ?, status = ? WHERE id = ? AND user_id = ?",
+      "UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, status = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?",
       [
         appName,
         category,
         pricing,
         startPayment,
         nextPayment,
+        status,
         cycle,
         paymentMethod,
         intervalDays,
         email,
         icon,
-        status,
         req.params.id,
         req.user.userId,
       ]
@@ -173,7 +172,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const [result] = await pool.query(
-      "DELETE FROM subscriptions WHERE id = ? AND user_id = ?",
+      "UPDATE subscriptions SET is_deleted = TRUE WHERE id = ? AND user_id = ?",
       [req.params.id, req.user.userId]
     );
     if (result.affectedRows === 0) {
@@ -187,46 +186,5 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       .json({ message: "An error occurred while deleting the subscription" });
   }
 });
-
-// Helper function to calculate next payment date
-function calculateNextPayment(startDate, cycle) {
-  let nextPayment = new Date(startDate);
-  switch (cycle) {
-    case "daily":
-      nextPayment.setDate(nextPayment.getDate() + 1);
-      break;
-    case "weekly":
-      nextPayment.setDate(nextPayment.getDate() + 7);
-      break;
-    case "monthly":
-      nextPayment.setMonth(nextPayment.getMonth() + 1);
-      break;
-    case "3 months":
-      nextPayment.setMonth(nextPayment.getMonth() + 3);
-      break;
-    case "6 months":
-      nextPayment.setMonth(nextPayment.getMonth() + 6);
-      break;
-    case "yearly":
-      nextPayment.setFullYear(nextPayment.getFullYear() + 1);
-      break;
-  }
-  return nextPayment;
-}
-
-// function getStatus(status) {
-//   const differenceInDays = Math.floor(
-//     startDate - new Date() / (1000 * 60 * 60 * 24)
-//   );
-//   const newStatus =
-//     status === "inactive"
-//       ? "inactive"
-//       : differenceInDays < 0
-//       ? "overdue"
-//       : differenceInDays < 7
-//       ? "upcoming"
-//       : "active";
-//   return newStatus;
-// }
 
 module.exports = router;

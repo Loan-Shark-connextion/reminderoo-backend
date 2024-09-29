@@ -111,7 +111,7 @@ router.get("/:id/transactions", authenticateToken, async (req, res) => {
 
     // Fetch all transactions for the subscription
     const [transactions] = await pool.query(
-      "SELECT * FROM transactions WHERE subscription_id = ? ORDER BY 'desc'",
+      'SELECT * FROM transactions WHERE subscription_id = ? ORDER BY "desc" ',
       [subscriptionId]
     );
 

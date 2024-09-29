@@ -7,6 +7,7 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const cron = require("node-cron");
 const { checkAndSendReminders } = require("./services/notificationService");
 const reminderRoutes = require("./routes/reminderRoutes");
+const chartRoutes = require("./routes/chartRoutes");
 
 const app = express();
 const cors = require("cors");
@@ -25,6 +26,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/charts", chartRoutes);
 
 app.get("/", (req, res) => {
   res.send("Reminderoo API");
