@@ -1,29 +1,26 @@
-const mysql = require('mysql2/promise');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: "reminderoo",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+    throw new Error('Missing Supabase environment variables');
+}
 
-// Test the connection
-pool.query('SELECT 1')
-    .then(() => console.log('Database connected successfully'))
-    .catch(err => console.error('Database connection failed:', err));
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+);
 
+// Optional: Add a simple test query to verify connection
+const testConnection = async () => {
+    try {
+        const { data, error } = await supabase.from('users').select('count').single();
+        if (error) throw error;
+        console.log('Supabase connected successfully');
+    } catch (err) {
+        console.error('Supabase connection test failed:', err.message);
+    }
+};
 
-pool.getConnection()
-    .then(connection => {
-        console.log('Database connected successfully');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('Database connection failed:', err);
-    });
+testConnection();
 
-module.exports = pool;
+module.exports = supabase;

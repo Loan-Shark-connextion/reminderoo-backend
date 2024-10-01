@@ -1,42 +1,77 @@
-const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
-const pool = require('../db');
+const supabase = require('../db');
 
 class User {
     static async create(name, email, password) {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await pool.query(
-        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-        [ name, email, hashedPassword]
-        );
         const defaultProfilePicture = `../public/images/default_profiles/default_${Math.floor(Math.random() * 5) + 1}.jpg`;
-        return result.insertId;
+        
+        const { data, error } = await supabase
+            .from('users')
+            .insert([
+                { name, email, password: hashedPassword, profile_picture: defaultProfilePicture }
+            ])
+            .select('id')
+            .single();
+            
+        if (error) throw error;
+        return data.id;
     }
 
     static async findByEmail(email) {
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-        return rows[0];
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+            
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
     }
 
     static async updateProfilePicture(userId, profilePicture) {
-        await pool.query('UPDATE users SET profile_picture = ? WHERE id = ?', [profilePicture, userId]);
+        const { error } = await supabase
+            .from('users')
+            .update({ profile_picture: profilePicture })
+            .eq('id', userId);
+            
+        if (error) throw error;
     }
 
     static async findById(userId) {
-        const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
-        return rows[0];
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+        if (error && error.code !== 'PGRST116') throw error;
+        return data;
     }
 
     static async updateProfile(userId, { name, email, phoneNumber }) {
-        await pool.query(
-            'UPDATE users SET name = ?, email = ?, phone_number = ? WHERE id = ?',
-            [name, email, phoneNumber, userId]
-        );
-        return this.findById(userId);
+        const { data, error } = await supabase
+            .from('users')
+            .update({ 
+                name, 
+                email, 
+                phone_number: phoneNumber 
+            })
+            .eq('id', userId)
+            .select()
+            .single();
+            
+        if (error) throw error;
+        return data;
     }
 
     static async updatePassword(userId, newHashedPassword) {
-        await pool.query('UPDATE users SET password = ? WHERE id = ?', [newHashedPassword, userId]);
+        const { error } = await supabase
+            .from('users')
+            .update({ password: newHashedPassword })
+            .eq('id', userId);
+            
+        if (error) throw error;
     }
 }
 
