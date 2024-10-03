@@ -7,6 +7,10 @@ const emailTemplate = (name, apps) => `
     <title>Simple Transactional Email</title>
     <style media="all" type="text/css">
       @media (max-width: 768px) {
+      #heading {
+        font-size: 1.75rem; 
+        margin: 0
+      }
         #reminder-svg {
           width: 100%; /* SVG takes full width on small screens */
           height: auto;
@@ -26,6 +30,10 @@ const emailTemplate = (name, apps) => `
         }
       }
       @media all {
+      #heading {
+        font-size: 3rem; 
+        margin: 0
+      }
         .btn-primary table td:hover {
           background-color: #ec0867 !important;
         }
@@ -36,6 +44,10 @@ const emailTemplate = (name, apps) => `
         }
       }
       @media only screen and (max-width: 640px) {
+      #heading {
+        font-size: 1.5rem; 
+        margin: 0
+      }
         .main p,
         .main td,
         .main span {
@@ -244,7 +256,7 @@ const emailTemplate = (name, apps) => `
                           font-family: Arial, Helvetica, sans-serif;
                         "
                       >
-                        <h1 style="font-size: 3rem; margin: 0">
+                        <h1 id="heading">
                           Payment Reminder
                         </h1>
                       </td>
