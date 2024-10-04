@@ -8,6 +8,7 @@ const cron = require('node-cron');
 const { checkAndSendReminders } = require('./services/notificationService');
 const reminderRoutes = require('./routes/reminderRoutes');
 const chartRoutes = require('./routes/chartRoutes');
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
