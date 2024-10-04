@@ -2,14 +2,14 @@ const bcrypt = require('bcrypt');
 const supabase = require('../db');
 
 class User {
-    static async create(name, email, password) {
+    static async create(username, email, password) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const defaultProfilePicture = `../public/images/default_profiles/default_${Math.floor(Math.random() * 5) + 1}.jpg`;
         
         const { data, error } = await supabase
             .from('users')
             .insert([
-                { name, email, password: hashedPassword, profile_picture: defaultProfilePicture }
+                { username, email, password: hashedPassword, profile_picture: defaultProfilePicture }
             ])
             .select('id')
             .single();
@@ -49,11 +49,11 @@ class User {
         return data;
     }
 
-    static async updateProfile(userId, { name, email, phoneNumber }) {
+    static async updateProfile(userId, { username, email, phoneNumber }) {
         const { data, error } = await supabase
             .from('users')
             .update({ 
-                name, 
+                username, 
                 email, 
                 phone_number: phoneNumber 
             })
