@@ -9,7 +9,7 @@ class User {
         const { data, error } = await supabase
             .from('users')
             .insert([
-                { username, email, password: hashedPassword, profile_picture: defaultProfilePicture }
+                { username, name: username, email, password: hashedPassword, profile_picture: defaultProfilePicture }
             ])
             .select('id')
             .single();
