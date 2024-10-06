@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const supabase = require('../db');
 const authenticateToken = require('../middleware/auth');
 
 // Create a new subscription
@@ -11,8 +11,8 @@ router.post('/', authenticateToken, async (req, res) => {
             category, 
             pricing, 
             startPayment, 
-            nextPayment,  // New field
-            status,       // New field
+            nextPayment,
+            status,
             cycle, 
             paymentMethod, 
             intervalDays,
@@ -20,17 +20,32 @@ router.post('/', authenticateToken, async (req, res) => {
             icon 
         } = req.body;
 
-        // Validate input
         if (!appName || !category || !pricing || !startPayment || !nextPayment || !status || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
-        const [result] = await pool.query(
-            'INSERT INTO subscriptions (user_id, app_name, category, pricing, start_payment, next_payment, status, cycle, payment_method, interval_days, email, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [req.user.userId, appName, category, pricing, startPayment, nextPayment, status, cycle, paymentMethod, intervalDays, email, icon]
-        );
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .insert([{
+                user_id: req.user.userId,
+                app_name: appName,
+                category,
+                pricing,
+                start_payment: startPayment,
+                next_payment: nextPayment,
+                status,
+                cycle,
+                payment_method: paymentMethod,
+                interval_days: intervalDays,
+                email,
+                icon
+            }])
+            .select()
+            .single();
 
-        res.status(201).json({ message: 'Subscription created successfully', subscriptionId: result.insertId });
+        if (error) throw error;
+
+        res.status(201).json({ message: 'Subscription created successfully', subscriptionId: data.id });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while creating the subscription' });
@@ -40,8 +55,14 @@ router.post('/', authenticateToken, async (req, res) => {
 // Get all subscriptions for a user
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE user_id = ? AND is_deleted = FALSE', [req.user.userId]);
-        res.json(rows);
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', req.user.userId)
+            .eq('is_deleted', false);
+
+        if (error) throw error;
+        res.json(data);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while fetching subscriptions' });
@@ -51,11 +72,21 @@ router.get('/', authenticateToken, async (req, res) => {
 // Get a specific subscription
 router.get('/:id', authenticateToken, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM subscriptions WHERE id = ? AND user_id = ? AND is_deleted = FALSE', [req.params.id, req.user.userId]);
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Subscription not found' });
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('id', req.params.id)
+            .eq('user_id', req.user.userId)
+            .eq('is_deleted', false)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ message: 'Subscription not found' });
+            }
+            throw error;
         }
-        res.json(rows[0]);
+        res.json(data);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'An error occurred while fetching the subscription' });
@@ -70,8 +101,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             category, 
             pricing, 
             startPayment, 
-            nextPayment,  // New field
-            status,       // New field
+            nextPayment,
+            status,
             cycle, 
             paymentMethod, 
             intervalDays,
@@ -79,18 +110,35 @@ router.put('/:id', authenticateToken, async (req, res) => {
             icon 
         } = req.body;
 
-        // Validate input
         if (!appName || !category || !pricing || !startPayment || !nextPayment || !status || !cycle || !paymentMethod || !intervalDays || !email || !icon) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
-        const [result] = await pool.query(
-            'UPDATE subscriptions SET app_name = ?, category = ?, pricing = ?, start_payment = ?, next_payment = ?, status = ?, cycle = ?, payment_method = ?, interval_days = ?, email = ?, icon = ? WHERE id = ? AND user_id = ?',
-            [appName, category, pricing, startPayment, nextPayment, status, cycle, paymentMethod, intervalDays, email, icon, req.params.id, req.user.userId]
-        );
+        const { data, error } = await supabase
+            .from('subscriptions')
+            .update({
+                app_name: appName,
+                category,
+                pricing,
+                start_payment: startPayment,
+                next_payment: nextPayment,
+                status,
+                cycle,
+                payment_method: paymentMethod,
+                interval_days: intervalDays,
+                email,
+                icon
+            })
+            .eq('id', req.params.id)
+            .eq('user_id', req.user.userId)
+            .select()
+            .single();
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Subscription not found' });
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ message: 'Subscription not found' });
+            }
+            throw error;
         }
 
         res.json({ message: 'Subscription updated successfully' });
@@ -103,12 +151,17 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // Delete a subscription
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
-        const [result] = await pool.query(
-            'UPDATE subscriptions SET is_deleted = TRUE WHERE id = ? AND user_id = ?', 
-            [req.params.id, req.user.userId]
-        );
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Subscription not found' });
+        const { error } = await supabase
+            .from('subscriptions')
+            .update({ is_deleted: true })
+            .eq('id', req.params.id)
+            .eq('user_id', req.user.userId);
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ message: 'Subscription not found' });
+            }
+            throw error;
         }
         res.json({ message: 'Subscription deleted successfully' });
     } catch (error) {
